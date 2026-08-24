@@ -186,7 +186,7 @@ def index():
         }
     </style>
 </head>
-<body class="p-4">
+<body class="">
 
     <!-- Screen Loading Overlay -->
     <div id="loading-overlay">
@@ -198,9 +198,9 @@ def index():
     </div>
 
     <div class="container-fluid">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <h2 style="color: var(--primary-blue); font-weight: bold; margin: 0;">Carteira por Seguimento e Administradoras (Consórcios)</h2>
-            <span class="badge bg-success p-2">Execução Backend Python</span>
+        <div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom">
+            <h2><span class="text-gray">Carteira por Seguimento e Administradoras (Consórcios)</span></h2>
+            <span class="text-muted">Dados recuperados via Python</span>
         </div>
 
         <form method="GET" action="/" class="filter-section shadow-sm" id="filter-form">
