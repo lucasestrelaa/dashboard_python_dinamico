@@ -157,7 +157,7 @@ def index():
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
     <style>
-        :root { --primary-blue: #1A4B83; --bg-light: #F4F7FA; --card-bg: #FFFFFF; --border-color: #E0E6ED; }
+        :root { --primary-blue: #1A4B83; --bg-light: #FFFFFF; --card-bg: #FFFFFF; --border-color: #E0E6ED; }
         body { background-color: var(--bg-light); font-family: 'Segoe UI', sans-serif; }
         .kpi-card { border: none; border-radius: 10px; background: var(--card-bg); box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
         .kpi-card-primary { background-color: var(--primary-blue); color: white; }
@@ -199,7 +199,7 @@ def index():
 
     <div class="container-fluid">
         <div class="d-flex justify-content-between align-items-center mb-4">
-            <h2 style="color: var(--primary-blue); font-weight: bold; margin: 0;">Painel de Consórcios</h2>
+            <h2 style="color: var(--primary-blue); font-weight: bold; margin: 0;">Carteira por Seguimento e Administradoras (Consórcios)</h2>
             <span class="badge bg-success p-2">Execução Backend Python</span>
         </div>
 
