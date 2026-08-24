@@ -153,7 +153,7 @@ def index():
             </div>
             <div class="col-md-3">
                 <div class="card kpi-card border p-3">
-                    <div class="kpi-title text-muted">Cotas Ativas (Último Mês)</div>
+                    <div class="kpi-title text-muted">Cotas Ativas (Base Gestão)</div>
                     <div class="kpi-value text-dark" id="kpiAtivas">0</div>
                     <div class="kpi-hint text-muted">Base sob gestão atual</div>
                 </div>
@@ -201,3 +201,195 @@ def index():
                         <table class="table table-sm table-hover table-borderless table-data align-middle mb-0">
                             <tbody>
                                 <tr><td>Vendas Comercializadas</td><td class="text-end text-primary" id="tblVendas">0</td></tr>
+                                <tr><td>Cotas Ativas em Dia</td><td class="text-end text-success" id="tblEmDia">0</td></tr>
+                                <tr><td>Inadimplentes (Não Contemplados)</td><td class="text-end text-warning" id="tblInadNaoCont">0</td></tr>
+                                <tr><td>Inadimplentes (Contemplados)</td><td class="text-end text-danger" id="tblInadCont">0</td></tr>
+                                <tr class="border-top"><td>Contempladas Acumuladas</td><td class="text-end" id="tblContAcum">0</td></tr>
+                                <tr><td>Crédito Pendente de Resgate</td><td class="text-end" id="tblCredPend">0</td></tr>
+                                <tr><td>Cotas Quitadas / Concluídas</td><td class="text-end" id="tblQuitadas">0</td></tr>
+                                <tr><td>Cancelamentos / Excluídas</td><td class="text-end text-muted" id="tblExcluidas">0</td></tr>
+                                <tr class="border-top table-light fw-bold"><td>Total de Cotas Ativas</td><td class="text-end text-primary" id="tblTotalAtivas">0</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-12">
+                <div class="chart-card" style="min-height: 420px;">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <h6 class="fw-bold" style="color: var(--primary-blue); margin:0;">3. Evolução Histórica Mês a Mês</h6>
+                        <small class="text-muted">Acompanhamento contínuo dos meses disponíveis</small>
+                    </div>
+                    <div id="chartHistorico" class="plot-container" style="height: 370px;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const rawData = {dados_json_str};
+
+        function aplicarFiltros() {{
+            const compSelecionada = document.getElementById("selectCompetencia").value;
+            const segSelecionado = document.getElementById("selectSegmento").value;
+            const adminSelecionada = document.getElementById("selectAdmin").value;
+
+            let dadosFiltrados = rawData.filter(item => {{
+                let matchComp = (compSelecionada === "TODOS" || item.data_referencia === compSelecionada);
+                let matchSeg = (segSelecionado === "TODOS" || item.segmento === segSelecionado);
+                let matchAdmin = (adminSelecionada === "TODOS" || item.administradora === adminSelecionada);
+                return matchComp && matchSeg && matchAdmin;
+            }});
+
+            renderizarPainel(dadosFiltrados, compSelecionada);
+        }}
+
+        function resetarFiltros() {{
+            document.getElementById("selectCompetencia").value = "TODOS";
+            document.getElementById("selectSegmento").value = "TODOS";
+            document.getElementById("selectAdmin").value = "TODOS";
+            aplicarFiltros();
+        }}
+
+        function renderizarPainel(dados, compSelecionada) {{
+            let mesesUnicos = [...new Set(dados.map(d => d.data_referencia))];
+            let qtdMeses = mesesUnicos.length || 1;
+
+            let t = {{
+                vendas: dados.reduce((a, b) => a + (b.quantidade || 0), 0),
+                emDia: dados.reduce((a, b) => a + (b.cotas_ativas_em_dia || 0), 0),
+                inadNaoCont: dados.reduce((a, b) => a + (b.cotas_ativas_nao_contempladas_inadimplentes || 0), 0),
+                inadCont: dados.reduce((a, b) => a + (b.cotas_ativas_contempladas_inadimplentes || 0), 0),
+                contAcum: dados.reduce((a, b) => a + (b.cotas_ativas_contempladas_acum || 0), 0),
+                credPend: dados.reduce((a, b) => a + (b.cotas_ativas_credito_pendente || 0), 0),
+                quitadas: dados.reduce((a, b) => a + (b.cotas_ativas_quitadas || 0), 0),
+                excluidas: dados.reduce((a, b) => a + (b.cotas_excluidas_a_comercializar || 0), 0),
+                contMes: dados.reduce((a, b) => a + (b.cotas_ativas_contempladas_mes || 0), 0),
+                totalAtivas: dados.reduce((a, b) => a + (b.cotas_ativas_total || 0), 0)
+            }};
+
+            if(compSelecionada === "TODOS" && mesesUnicos.length > 1) {{
+                let ultimoMes = mesesUnicos[mesesUnicos.length - 1];
+                let dadosUltimoMes = dados.filter(d => d.data_referencia === ultimoMes);
+                t.totalAtivas = dadosUltimoMes.reduce((a, b) => a + (b.cotas_ativas_total || 0), 0);
+                t.emDia = dadosUltimoMes.reduce((a, b) => a + (b.cotas_ativas_em_dia || 0), 0);
+                t.inadNaoCont = dadosUltimoMes.reduce((a, b) => a + (b.cotas_ativas_nao_contempladas_inadimplentes || 0), 0);
+                t.inadCont = dadosUltimoMes.reduce((a, b) => a + (b.cotas_ativas_contempladas_inadimplentes || 0), 0);
+            }}
+
+            let mediaVendasMensal = Math.round(t.vendas / qtdMeses);
+            let taxaInadimplencia = t.totalAtivas > 0 ? (((t.inadNaoCont + t.inadCont) / t.totalAtivas) * 100).toFixed(1) : 0;
+
+            document.getElementById("kpiVendas").innerText = t.vendas.toLocaleString('pt-BR');
+            document.getElementById("kpiMediaVendas").innerText = mediaVendasMensal.toLocaleString('pt-BR');
+            document.getElementById("kpiAtivas").innerText = t.totalAtivas.toLocaleString('pt-BR');
+            document.getElementById("kpiContempladas").innerText = t.contMes.toLocaleString('pt-BR');
+            document.getElementById("kpiTaxaInad").innerText = taxaInadimplencia.replace('.', ',') + "%";
+
+            document.getElementById("tblVendas").innerText = t.vendas.toLocaleString('pt-BR');
+            document.getElementById("tblEmDia").innerText = t.emDia.toLocaleString('pt-BR');
+            document.getElementById("tblInadNaoCont").innerText = t.inadNaoCont.toLocaleString('pt-BR');
+            document.getElementById("tblInadCont").innerText = t.inadCont.toLocaleString('pt-BR');
+            document.getElementById("tblContAcum").innerText = t.contAcum.toLocaleString('pt-BR');
+            document.getElementById("tblCredPend").innerText = t.credPend.toLocaleString('pt-BR');
+            document.getElementById("tblQuitadas").innerText = t.quitadas.toLocaleString('pt-BR');
+            document.getElementById("tblExcluidas").innerText = t.excluidas.toLocaleString('pt-BR');
+            document.getElementById("tblTotalAtivas").innerText = t.totalAtivas.toLocaleString('pt-BR');
+
+            // 1. Plot Funil com textos traduzidos e formatados
+            Plotly.react('chartFunil', [{{
+                type: 'funnel',
+                y: ['1. Vendas', '2. Em Dia', '3. Cont. Acum.', '4. Créd. Pend.', '5. Quitadas'],
+                x: [t.vendas, t.emDia, t.contAcum, t.credPend, t.quitadas],
+                texttemplate: "%{{value:,.0f}}<br>%{{percentInitial:.1%}}",
+                hovertemplate: 
+                    "<b>%{{y}}</b><br>" +
+                    "Quantidade: %{{value:,.0f}}<br>" +
+                    "%{{percentInitial:.1%}} do inicial<br>" +
+                    "%{{percentPrevious:.1%}} do anterior<br>" +
+                    "%{{percentTotal:.1%}} do total" +
+                    "<extra></extra>",
+                marker: {{ color: ['#1A4B83', '#28A745', '#17A2B8', '#E67E22', '#8E44AD'] }}
+            }}], {{
+                height: 330, 
+                margin: {{ l: 110, r: 20, t: 10, b: 20 }},
+                paper_bgcolor: 'transparent', 
+                plot_bgcolor: 'transparent'
+            }}, {{
+                responsive: true,
+                locale: 'pt-BR',
+                locales: {{
+                    'pt-BR': {{
+                        format: {{
+                            thousands: '.',
+                            grouping: [3]
+                        }}
+                    }}
+                }}
+            }});
+
+            // 2. Plot Pizza
+            Plotly.react('chartPizza', [{{
+                type: 'pie', hole: 0.5,
+                labels: ['Em Dia', 'Inad. (Não Cont.)', 'Inad. (Cont.)'],
+                values: [t.emDia, t.inadNaoCont, t.inadCont],
+                marker: {{ colors: ['#28A745', '#E67E22', '#D9534F'] }},
+                textinfo: 'percent+label'
+            }}], {{
+                height: 330, margin: {{ l: 10, r: 10, t: 10, b: 30 }},
+                showlegend: false,
+                paper_bgcolor: 'transparent', plot_bgcolor: 'transparent'
+            }}, {{responsive: true}});
+
+            // 3. Agrupamento para o Gráfico Histórico Multi-Mês
+            let agrupadoHist = {{}};
+            dados.forEach(d => {{
+                let c = d.data_referencia;
+                let sortKey = d.sort_key;
+                if(!agrupadoHist[c]) agrupadoHist[c] = {{ sortKey: sortKey, v:0, e:0, m:0, a:0 }};
+                agrupadoHist[c].v += (d.quantidade || 0);
+                agrupadoHist[c].e += (d.cotas_excluidas_a_comercializar || 0);
+                agrupadoHist[c].m += (d.cotas_ativas_contempladas_mes || 0);
+                agrupadoHist[c].a += (d.cotas_ativas_total || 0);
+            }});
+
+            let eixosX = Object.keys(agrupadoHist).sort((a, b) => agrupadoHist[a].sortKey - agrupadoHist[b].sortKey);
+
+            Plotly.react('chartHistorico', [
+                {{ x: eixosX, y: eixosX.map(k => agrupadoHist[k].v), name: 'Vendas no Mês', type: 'scatter', mode: 'lines+markers', line: {{ color: '#1A4B83', width: 3 }} }},
+                {{ x: eixosX, y: eixosX.map(k => agrupadoHist[k].m), name: 'Contemplações no Mês', type: 'scatter', mode: 'lines+markers', line: {{ color: '#28A745', width: 3 }} }},
+                {{ x: eixosX, y: eixosX.map(k => agrupadoHist[k].e), name: 'Cancelamentos', type: 'scatter', mode: 'lines+markers', line: {{ color: '#D9534F', width: 2, dash: 'dot' }} }},
+                {{ x: eixosX, y: eixosX.map(k => agrupadoHist[k].a), name: 'Evolução Carteira Ativa', type: 'scatter', mode: 'lines+markers', yaxis: 'y2', line: {{ color: '#6C757D', width: 2, dash: 'dash' }} }}
+            ], {{
+                height: 350,
+                hovermode: 'x unified',
+                margin: {{ l: 50, r: 50, t: 20, b: 40 }},
+                paper_bgcolor: 'transparent', plot_bgcolor: 'transparent',
+                xaxis: {{ type: 'category', title: 'Competência' }},
+                yaxis: {{ title: 'Fluxo Mensal (Cotas)', showgrid: true, gridcolor: '#E0E6ED' }},
+                yaxis2: {{ title: 'Estoque de Ativas', overlaying: 'y', side: 'right', showgrid: false }},
+                legend: {{ orientation: 'h', y: 1.15, x: 0 }}
+            }}, {{responsive: true}});
+        }}
+
+        document.addEventListener("DOMContentLoaded", function() {{
+            aplicarFiltros();
+        }});
+
+        window.addEventListener('resize', function() {{
+            Plotly.Plots.resize(document.getElementById('chartFunil'));
+            Plotly.Plots.resize(document.getElementById('chartPizza'));
+            Plotly.Plots.resize(document.getElementById('chartHistorico'));
+        }});
+    </script>
+</body>
+</html>"""
+
+    return render_template_string(html_template)
+
+if __name__ == '__main__':
+    port = int(os.environ.get('PORT', 5000))
+    app.run(host='0.0.0.0', port=port)
