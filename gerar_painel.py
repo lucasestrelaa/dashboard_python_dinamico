@@ -157,7 +157,7 @@ def index():
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
     <style>
-        :root { --primary-blue: #1A4B83; --bg-light: #FFFFFF; --card-bg: #FFFFFF; --border-color: #E0E6ED; }
+        :root { --primary-blue: #1A4B83; --bg-light: #FFFFFF; --card-bg: #fcfafa; --border-color: #E0E6ED; }
         body { background-color: var(--bg-light); font-family: 'Segoe UI', sans-serif; }
         .kpi-card { border: none; border-radius: 10px; background: var(--card-bg); box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
         .kpi-card-primary { background-color: var(--primary-blue); color: white; }
