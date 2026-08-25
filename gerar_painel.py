@@ -283,7 +283,6 @@ def index():
     <div class="container-fluid">
         <div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom">
             <h2><span class="text-gray">Carteira por Segmento e Administradoras (Consórcios)</span></h2>
-            <span class="text-muted">Dados recuperados via Python</span>
         </div>
 
         <form method="GET" action="/" class="filter-section shadow-sm" id="filter-form">
