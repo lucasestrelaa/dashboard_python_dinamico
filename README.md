@@ -28,6 +28,7 @@
 
 <ul>
   <li><b>Consumo e Tratamento de Dados:</b> Integração com webservice PHP/MySQL e higienização/mapeamento de dados com Pandas.</li>
+  <li><b>KPIs:</b> Indicadores referentes as carteiras de consórcios.</li>
   <li><b>Gráfico de Funil:</b> Visualização das etapas de conversão e ciclo de vida das cotas.</li>
   <li><b>Gráfico de Rosca:</b> Composição da carteira dividida entre cotas em dia e inadimplentes.</li>
   <li><b>Evolução Histórica:</b> Gráfico combinado de linhas e eixo secundário para acompanhar o fluxo mensal vs. estoque ativo.</li>
@@ -35,7 +36,7 @@
     <ul>
       <li>Script para um servidor web em **Flask**.</li>
       <li>Injeção direta dos gráficos Plotly convertidos em HTML/Divs no template do Flask via Jinja2 (`render_template_string`).</li>
-      <li>Tratamento de compatibilidade de transparência e leiaute no Python (`rgba(0,0,0,0)` para evitar quebras de propriedades nativas da biblioteca Plotly).</li>
+      <li>Tratamento de compatibilidade de transparência e leiaute no Python.</li>
     </ul>
   </li>
 </ul>
