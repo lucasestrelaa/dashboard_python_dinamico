@@ -315,7 +315,7 @@ def index():
                     </select>
                 </div>
                 <div class="col-md-2 d-flex gap-2">
-                    <button type="submit" class="btn btn-primary w-100 fw-bold" style="background-color: var(--primary-blue)">Filtrar</button>
+                    <button type="submit" class="btn btn-primary fw-bold" style="background-color: var(--primary-blue)">Filtrar</button>
                     <a href="/" class="btn btn-outline-secondary fw-bold" onclick="showLoading()">Limpar</a>
                 </div>
             </div>
