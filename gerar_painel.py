@@ -241,8 +241,8 @@ def index():
 
         <div class="row mb-4 g-3">
             <div class="col-md-2"><div class="card kpi-card border p-3"><div class="kpi-title text-muted">Média Mensal</div><div class="kpi-value text-primary">{{ fmt(media_vendas) }}</div></div></div>
-            <div class="col-md-4"><div class="card kpi-card border p-3"><div class="kpi-title text-muted">Cotas Ativas</div><div class="kpi-value text-dark">{{ fmt(t_total_ativas) }}</div></div></div>
             <div class="col-md-2"><div class="card kpi-card border p-3"><div class="kpi-title text-muted">Contemplações</div><div class="kpi-value text-success">{{ fmt(t_cont_mes) }}</div></div></div>
+            <div class="col-md-4"><div class="card kpi-card border p-3"><div class="kpi-title text-muted">Cotas Ativas</div><div class="kpi-value text-dark">{{ fmt(t_total_ativas) }}</div></div></div>
             <div class="col-md-2"><div class="card kpi-card border p-3"><div class="kpi-title text-muted">Taxa Inadimplência</div><div class="kpi-value text-danger">{{ taxa_inad }}%</div></div></div>
             <div class="col-md-2"><div class="card kpi-card kpi-card-primary p-3"><div class="kpi-title">Vendas</div><div class="kpi-value">{{ fmt(t_vendas) }}</div></div></div>
         </div>
