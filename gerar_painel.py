@@ -127,6 +127,7 @@ def index():
     div_pizza = fig_pizza.to_html(full_html=False, include_plotlyjs=False)
 
     # 3. Histórico (Replicando o SELECT SQL)
+    # 3. Histórico (Compatível exatamente com a sua tabela)
     df_hist_base = df.copy()
 
     if seg_sel != 'TODOS':
@@ -134,18 +135,20 @@ def index():
     if admin_sel != 'TODOS':
         df_hist_base = df_hist_base[df_hist_base['administradora'] == admin_sel]
 
-    # Prepara coluna auxiliar de inadimplentes para evitar erros no .agg()
+    # Prepara coluna auxiliar de inadimplentes
     df_hist_base['total_inadimplentes'] = (
         df_hist_base['cotas_ativas_contempladas_inadimplentes'] + 
         df_hist_base['cotas_ativas_nao_contempladas_inadimplentes']
     )
 
+    # Agrupamento idêntico à sua SQL
     df_hist = df_hist_base.groupby(['sort_key', 'data_referencia'], as_index=False).agg(
         vendas_mes=('quantidade', 'sum'),
         total_cotas_ativas=('cotas_ativas_total', 'sum'),
         total_inadimplentes=('total_inadimplentes', 'sum')
     ).sort_values('sort_key')
 
+    # Calcula % de inadimplência exatamente como na imagem (9.82, 9.71, 9.16)
     df_hist['pct_inadimplencia'] = df_hist.apply(
         lambda row: round((row['total_inadimplentes'] / row['total_cotas_ativas'] * 100), 2)
         if row['total_cotas_ativas'] > 0 else 0,
@@ -156,39 +159,60 @@ def index():
 
     fig_hist = make_subplots(specs=[[{"secondary_y": True}]])
 
-    # Vendas no Mês (Barras - Eixo Y Esquerdo)
+    # 1. Vendas no Mês (Barras Azuis com Exibição do Valor Total no topo da barra)
     fig_hist.add_trace(go.Bar(
         x=df_hist['data_referencia'], 
         y=df_hist['vendas_mes'], 
         name='Vendas no Mês', 
-        marker_color='#1A4B83'
+        marker_color='#1A4B83',
+        text=[f"{v:,}".replace(",", ".") for v in df_hist['vendas_mes']],
+        textposition='outside',
+        customdata=df_hist['pct_inadimplencia'],
+        hovertemplate="<b>%{x}</b><br>Vendas: %{y:,.0f}<br>Inadimplência: %{customdata}%<extra></extra>"
     ), secondary_y=False)
 
-    # % Inadimplência (Linha - Eixo Y Direito)
+    # 2. Total de Cotas Ativas (Linha Verde com Exibição do Valor Total nos Pontos)
     fig_hist.add_trace(go.Scatter(
         x=df_hist['data_referencia'], 
-        y=df_hist['pct_inadimplencia'], 
-        name='% Inadimplência', 
-        line=dict(color='#D9534F', width=3),
-        mode='lines+markers',
-        hovertemplate="%{y}%<extra></extra>"
+        y=df_hist['total_cotas_ativas'], 
+        name='Total Cotas Ativas', 
+        line=dict(color='#28A745', width=3),
+        mode='lines+markers+text',
+        text=[f"{v:,}".replace(",", ".") for v in df_hist['total_cotas_ativas']],
+        textposition='top center',
+        customdata=df_hist['pct_inadimplencia'],
+        hovertemplate="<b>%{x}</b><br>Total Cotas Ativas: %{y:,.0f}<br>Inadimplência: %{customdata}%<extra></extra>"
     ), secondary_y=True)
 
     fig_hist.update_layout(
-        height=350, 
+        height=380, 
         hovermode='x unified', 
-        margin=dict(l=50, r=50, t=20, b=40),
+        margin=dict(l=50, r=50, t=30, b=40),
         paper_bgcolor='rgba(0,0,0,0)', 
         plot_bgcolor='rgba(0,0,0,0)',
         legend=dict(orientation='h', y=1.15, x=0),
         xaxis=dict(type='category', title='Competência')
     )
 
-    fig_hist.update_yaxes(title_text="Vendas no Mês", secondary_y=False, showgrid=True, gridcolor='#E0E6ED')
-    fig_hist.update_yaxes(title_text="% Inadimplência", secondary_y=True, showgrid=False, ticksuffix="%")
+    # Ajusta os limites para os números gravados em cima dos pontos/barras não saírem da tela
+    max_vendas = df_hist['vendas_mes'].max() if len(df_hist) > 0 else 100
+    max_ativas = df_hist['total_cotas_ativas'].max() if len(df_hist) > 0 else 100
+
+    fig_hist.update_yaxes(
+        title_text="Vendas no Mês", 
+        secondary_y=False, 
+        showgrid=True, 
+        gridcolor='#E0E6ED',
+        range=[0, max_vendas * 1.25]
+    )
+    fig_hist.update_yaxes(
+        title_text="Total Cotas Ativas", 
+        secondary_y=True, 
+        showgrid=False,
+        range=[0, max_ativas * 1.25]
+    )
 
     div_hist = fig_hist.to_html(full_html=False, include_plotlyjs=False)
-
     html_template = """<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
