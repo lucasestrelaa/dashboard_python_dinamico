@@ -2,7 +2,6 @@ import os
 import requests
 import pandas as pd
 import plotly.graph_objects as go
-from plotly.subplots import make_subplots
 from flask import Flask, render_template_string, request
 
 app = Flask(__name__)
@@ -20,6 +19,7 @@ def fmt(valor):
 def index():
     try:
         response = requests.get(URL_BASE, timeout=15)
+        response.raise_for_status()
         dataJson = response.json()
         rawData = dataJson.get("data", [])
         rawAdmins = dataJson.get("administradoras", [])
@@ -60,6 +60,7 @@ def index():
     seg_sel = request.args.get('segmento', 'TODOS')
     admin_sel = request.args.get('administradora', 'TODOS')
 
+    # Filtragem dos KPIs gerais
     df_filtrado = df.copy()
     if comp_sel != 'TODOS':
         df_filtrado = df_filtrado[df_filtrado['data_referencia'] == comp_sel]
@@ -126,8 +127,7 @@ def index():
     )
     div_pizza = fig_pizza.to_html(full_html=False, include_plotlyjs=False)
 
-    # 3. Histórico (Replicando o SELECT SQL)
-    # 3. Histórico (Compatível exatamente com a sua tabela)
+    # 3. Histórico com as 3 Barras Lado a Lado
     df_hist_base = df.copy()
 
     if seg_sel != 'TODOS':
@@ -135,31 +135,26 @@ def index():
     if admin_sel != 'TODOS':
         df_hist_base = df_hist_base[df_hist_base['administradora'] == admin_sel]
 
-    # Prepara coluna auxiliar de inadimplentes
     df_hist_base['total_inadimplentes'] = (
         df_hist_base['cotas_ativas_contempladas_inadimplentes'] + 
         df_hist_base['cotas_ativas_nao_contempladas_inadimplentes']
     )
 
-    # Agrupamento idêntico à sua SQL
     df_hist = df_hist_base.groupby(['sort_key', 'data_referencia'], as_index=False).agg(
         vendas_mes=('quantidade', 'sum'),
         total_cotas_ativas=('cotas_ativas_total', 'sum'),
         total_inadimplentes=('total_inadimplentes', 'sum')
     ).sort_values('sort_key')
 
-    # Calcula % de inadimplência exatamente como na imagem (9.82, 9.71, 9.16)
     df_hist['pct_inadimplencia'] = df_hist.apply(
         lambda row: round((row['total_inadimplentes'] / row['total_cotas_ativas'] * 100), 2)
         if row['total_cotas_ativas'] > 0 else 0,
         axis=1
     )
 
-    df_hist['data_referencia'] = df_hist['data_referencia'].astype(str)
+    fig_hist = go.Figure()
 
-    fig_hist = make_subplots(specs=[[{"secondary_y": True}]])
-
-    # 1. Vendas no Mês (Barras Azuis com Exibição do Valor Total no topo da barra)
+    # Barra 1: Vendas no Mês
     fig_hist.add_trace(go.Bar(
         x=df_hist['data_referencia'], 
         y=df_hist['vendas_mes'], 
@@ -167,52 +162,53 @@ def index():
         marker_color='#1A4B83',
         text=[f"{v:,}".replace(",", ".") for v in df_hist['vendas_mes']],
         textposition='outside',
-        customdata=df_hist['pct_inadimplencia'],
-        hovertemplate="<b>%{x}</b><br>Vendas: %{y:,.0f}<br>Inadimplência: %{customdata}%<extra></extra>"
-    ), secondary_y=False)
+        hovertemplate="<b>%{x}</b><br>Vendas no Mês: <b>%{y:,.0f}</b><extra></extra>"
+    ))
 
-    # 2. Total de Cotas Ativas (Linha Verde com Exibição do Valor Total nos Pontos)
-    fig_hist.add_trace(go.Scatter(
+    # Barra 2: Total Cotas Ativas
+    fig_hist.add_trace(go.Bar(
         x=df_hist['data_referencia'], 
         y=df_hist['total_cotas_ativas'], 
         name='Total Cotas Ativas', 
-        line=dict(color='#28A745', width=3),
-        mode='lines+markers+text',
+        marker_color='#28A745',
         text=[f"{v:,}".replace(",", ".") for v in df_hist['total_cotas_ativas']],
-        textposition='top center',
+        textposition='outside',
+        hovertemplate="<b>%{x}</b><br>Total Cotas Ativas: <b>%{y:,.0f}</b><extra></extra>"
+    ))
+
+    # Barra 3: Inadimplência
+    fig_hist.add_trace(go.Bar(
+        x=df_hist['data_referencia'], 
+        y=df_hist['total_inadimplentes'], 
+        name='% Inadimplência', 
+        marker_color='#D9534F',
+        text=[f"{pct:.2f}%" for pct in df_hist['pct_inadimplencia']],
+        textposition='outside',
         customdata=df_hist['pct_inadimplencia'],
-        hovertemplate="<b>%{x}</b><br>Total Cotas Ativas: %{y:,.0f}<br>Inadimplência: %{customdata}%<extra></extra>"
-    ), secondary_y=True)
+        hovertemplate="<b>%{x}</b><br>Cotas Inadimplentes: <b>%{y:,.0f}</b><br>Taxa de Inadimplência: <b>%{customdata:.2f}%</b><extra></extra>"
+    ))
+
+    max_val = max(df_hist['total_cotas_ativas'].max(), df_hist['vendas_mes'].max()) if len(df_hist) > 0 else 100
 
     fig_hist.update_layout(
+        barmode='group',
         height=380, 
-        hovermode='x unified', 
+        hovermode='closest', 
         margin=dict(l=50, r=50, t=30, b=40),
         paper_bgcolor='rgba(0,0,0,0)', 
         plot_bgcolor='rgba(0,0,0,0)',
         legend=dict(orientation='h', y=1.15, x=0),
-        xaxis=dict(type='category', title='Competência')
-    )
-
-    # Ajusta os limites para os números gravados em cima dos pontos/barras não saírem da tela
-    max_vendas = df_hist['vendas_mes'].max() if len(df_hist) > 0 else 100
-    max_ativas = df_hist['total_cotas_ativas'].max() if len(df_hist) > 0 else 100
-
-    fig_hist.update_yaxes(
-        title_text="Vendas no Mês", 
-        secondary_y=False, 
-        showgrid=True, 
-        gridcolor='#E0E6ED',
-        range=[0, max_vendas * 1.25]
-    )
-    fig_hist.update_yaxes(
-        title_text="Total Cotas Ativas", 
-        secondary_y=True, 
-        showgrid=False,
-        range=[0, max_ativas * 1.25]
+        xaxis=dict(type='category', title='Competência'),
+        yaxis=dict(
+            title="Quantidade de Cotas", 
+            showgrid=True, 
+            gridcolor='#E0E6ED',
+            range=[0, max_val * 1.25]
+        )
     )
 
     div_hist = fig_hist.to_html(full_html=False, include_plotlyjs=False)
+
     html_template = """<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
