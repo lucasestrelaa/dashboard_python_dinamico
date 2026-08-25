@@ -127,13 +127,20 @@ def index():
     div_pizza = fig_pizza.to_html(full_html=False, include_plotlyjs=False)
 
     # 3. Histórico
-    df_hist = df_filtrado.groupby(['sort_key', 'data_referencia']).agg({
+    df_hist_base = df.copy()
+    if seg_sel != 'TODOS':
+        df_hist_base = df_hist_base[df_hist_base['segmento'] == seg_sel]
+    if admin_sel != 'TODOS':
+        df_hist_base = df_hist_base[df_hist_base['administradora'] == admin_sel]
+
+    df_hist = df_hist_base.groupby(['sort_key', 'data_referencia']).agg({
         'quantidade': 'sum',
         'cotas_ativas_contempladas_mes': 'sum',
         'cotas_excluidas_a_comercializar': 'sum',
         'cotas_ativas_total': 'sum'
     }).reset_index().sort_values('sort_key')
 
+    # Garantir que o eixo X trata as datas como categoria para não desordenar
     fig_hist = make_subplots(specs=[[{"secondary_y": True}]])
     fig_hist.add_trace(go.Scatter(x=df_hist['data_referencia'], y=df_hist['quantidade'], name='Vendas no Mês', line=dict(color='#1A4B83', width=3)), secondary_y=False)
     fig_hist.add_trace(go.Scatter(x=df_hist['data_referencia'], y=df_hist['cotas_ativas_contempladas_mes'], name='Contemplações', line=dict(color='#28A745', width=3)), secondary_y=False)
@@ -143,12 +150,12 @@ def index():
     fig_hist.update_layout(
         height=350, hovermode='x unified', margin=dict(l=50, r=50, t=20, b=40),
         paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)',
-        legend=dict(orientation='h', y=1.15, x=0)
+        legend=dict(orientation='h', y=1.15, x=0),
+        xaxis=dict(type='category') # Força a ordem exata do DataFrame
     )
     fig_hist.update_yaxes(title_text="Fluxo Mensal", secondary_y=False, showgrid=True, gridcolor='#E0E6ED')
     fig_hist.update_yaxes(title_text="Estoque Ativo", secondary_y=True, showgrid=False)
     div_hist = fig_hist.to_html(full_html=False, include_plotlyjs=False)
-
     html_template = """<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -157,7 +164,7 @@ def index():
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
     <style>
-        :root { --primary-blue: #1A4B83; --bg-light: #FFFFFF; --card-bg: #fcfafa; --border-color: #E0E6ED; }
+        :root { --primary-blue: #1A4B83; --bg-light: #FFFFFF; --accent-gray: #595858; --card-bg: #fcfafa; --border-color: #E0E6ED;  }
         body { background-color: var(--bg-light); font-family: 'Segoe UI', sans-serif; }
         .kpi-card { border: none; border-radius: 10px; background: var(--card-bg); box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
         .kpi-card-primary { background-color: var(--primary-blue); color: white; }
