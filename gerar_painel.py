@@ -133,16 +133,18 @@ def index():
     if admin_sel != 'TODOS':
         df_hist_base = df_hist_base[df_hist_base['administradora'] == admin_sel]
 
-    df_hist = df_hist_base.groupby(['sort_key', 'data_referencia']).agg({
-        'quantidade': 'sum',
-        'cotas_ativas_contempladas_mes': 'sum',
-        'cotas_excluidas_a_comercializar': 'sum',
-        'cotas_ativas_total': 'sum'
-    }).reset_index().sort_values('sort_key')
+    # df_hist = df_hist_base.groupby(['sort_key', 'data_referencia']).agg({
+    #     'quantidade': 'sum',
+    #     'cotas_ativas_contempladas_mes': 'sum',
+    #     'cotas_excluidas_a_comercializar': 'sum',
+    #     'cotas_ativas_total': 'sum'
+    # }).reset_index().sort_values('sort_key')
+    df_hist = df_hist_base.groupby(['sort_key', 'data_referencia'], as_index=False)[
+        ['quantidade', 'cotas_ativas_contempladas_mes', 'cotas_excluidas_a_comercializar', 'cotas_ativas_total']
+    ].sum().sort_values('sort_key')
 
     fig_hist = make_subplots(specs=[[{"secondary_y": True}]])
 
-    # Fluxos Mensais em Barras (para não sobrepor linhas com valores iguais)
     fig_hist.add_trace(go.Bar(
         x=df_hist['data_referencia'], 
         y=df_hist['quantidade'], 
@@ -164,17 +166,18 @@ def index():
         marker_color='#D9534F'
     ), secondary_y=False)
 
-    # Estoque (Carteira) mantido como Linha
+    # Trace de estoque
     fig_hist.add_trace(go.Scatter(
         x=df_hist['data_referencia'], 
         y=df_hist['cotas_ativas_total'], 
         name='Carteira Ativa', 
-        line=dict(color='#6C757D', width=3)
+        line=dict(color='#6C757D', width=3),
+        mode='lines+markers'
     ), secondary_y=True)
 
     fig_hist.update_layout(
         height=350, 
-        barmode='group', # Agrupa as barras lado a lado
+        barmode='group',
         hovermode='x unified', 
         margin=dict(l=50, r=50, t=20, b=40),
         paper_bgcolor='rgba(0,0,0,0)', 
@@ -183,7 +186,7 @@ def index():
         xaxis=dict(type='category')
     )
 
-    fig_hist.update_yaxes(title_text="Fluxo Mensal", secondary_y=False, showgrid=True, gridcolor='#E0E6ED', zeroline=True)
+    fig_hist.update_yaxes(title_text="Fluxo Mensal", secondary_y=False, showgrid=True, gridcolor='#E0E6ED')
     fig_hist.update_yaxes(title_text="Estoque Ativo", secondary_y=True, showgrid=False)
     div_hist = fig_hist.to_html(full_html=False, include_plotlyjs=False)
     html_template = """<!DOCTYPE html>
