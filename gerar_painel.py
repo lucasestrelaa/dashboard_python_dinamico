@@ -126,47 +126,45 @@ def index():
     )
     div_pizza = fig_pizza.to_html(full_html=False, include_plotlyjs=False)
 
-    # 3. Histórico (Totalmente corrigido e indentado dentro da função)
+    # 3. Histórico (Replicando o SELECT SQL)
     df_hist_base = df.copy()
 
     if seg_sel != 'TODOS':
         df_hist_base = df_hist_base[df_hist_base['segmento'] == seg_sel]
     if admin_sel != 'TODOS':
         df_hist_base = df_hist_base[df_hist_base['administradora'] == admin_sel]
-    
-    # 2. Agrupamento equivalente ao GROUP BY competencia e SUM(...)
+
+    # Prepara coluna auxiliar de inadimplentes para evitar erros no .agg()
+    df_hist_base['total_inadimplentes'] = (
+        df_hist_base['cotas_ativas_contempladas_inadimplentes'] + 
+        df_hist_base['cotas_ativas_nao_contempladas_inadimplentes']
+    )
+
     df_hist = df_hist_base.groupby(['sort_key', 'data_referencia'], as_index=False).agg(
         vendas_mes=('quantidade', 'sum'),
         total_cotas_ativas=('cotas_ativas_total', 'sum'),
-        total_inadimplentes=(
-            lambda x: (
-                df_hist_base.loc[x.index, 'cotas_ativas_contempladas_inadimplentes'] + 
-                df_hist_base.loc[x.index, 'cotas_ativas_nao_contempladas_inadimplentes']
-            ).sum()
-        )
+        total_inadimplentes=('total_inadimplentes', 'sum')
     ).sort_values('sort_key')
-    
-    # 3. Cálculo equivalente ao % de Inadimplência com tratamento de divisão por zero (NULLIF)
+
     df_hist['pct_inadimplencia'] = df_hist.apply(
         lambda row: round((row['total_inadimplentes'] / row['total_cotas_ativas'] * 100), 2)
         if row['total_cotas_ativas'] > 0 else 0,
         axis=1
     )
-    
+
     df_hist['data_referencia'] = df_hist['data_referencia'].astype(str)
 
-    # 1. Vendas no Mês (Barras)
     fig_hist = make_subplots(specs=[[{"secondary_y": True}]])
 
-    # Coluna 1: Vendas no Mês (Eixo Y da Esquerda)
+    # Vendas no Mês (Barras - Eixo Y Esquerdo)
     fig_hist.add_trace(go.Bar(
         x=df_hist['data_referencia'], 
         y=df_hist['vendas_mes'], 
         name='Vendas no Mês', 
         marker_color='#1A4B83'
     ), secondary_y=False)
-    
-    # Coluna 2: % Inadimplência (Eixo Y da Direita)
+
+    # % Inadimplência (Linha - Eixo Y Direito)
     fig_hist.add_trace(go.Scatter(
         x=df_hist['data_referencia'], 
         y=df_hist['pct_inadimplencia'], 
@@ -175,7 +173,7 @@ def index():
         mode='lines+markers',
         hovertemplate="%{y}%<extra></extra>"
     ), secondary_y=True)
-    
+
     fig_hist.update_layout(
         height=350, 
         hovermode='x unified', 
@@ -185,10 +183,10 @@ def index():
         legend=dict(orientation='h', y=1.15, x=0),
         xaxis=dict(type='category', title='Competência')
     )
-    
+
     fig_hist.update_yaxes(title_text="Vendas no Mês", secondary_y=False, showgrid=True, gridcolor='#E0E6ED')
     fig_hist.update_yaxes(title_text="% Inadimplência", secondary_y=True, showgrid=False, ticksuffix="%")
-    
+
     div_hist = fig_hist.to_html(full_html=False, include_plotlyjs=False)
 
     html_template = """<!DOCTYPE html>
