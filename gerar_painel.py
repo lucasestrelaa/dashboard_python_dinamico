@@ -130,78 +130,105 @@ def index():
     # 3. Histórico com as 3 Barras Lado a Lado
     df_hist_base = df.copy()
 
+    # Aplicar filtros que impactam o histórico (segmento, administradora e competência)
     if seg_sel != 'TODOS':
         df_hist_base = df_hist_base[df_hist_base['segmento'] == seg_sel]
     if admin_sel != 'TODOS':
         df_hist_base = df_hist_base[df_hist_base['administradora'] == admin_sel]
+    if comp_sel != 'TODOS':
+        df_hist_base = df_hist_base[df_hist_base['data_referencia'] == comp_sel]
 
+    # Calcular inadimplentes sobre o df filtrado
     df_hist_base['total_inadimplentes'] = (
-        df_hist_base['cotas_ativas_contempladas_inadimplentes'] + 
-        df_hist_base['cotas_ativas_nao_contempladas_inadimplentes']
+        df_hist_base.get('cotas_ativas_contempladas_inadimplentes', 0).astype(int) +
+        df_hist_base.get('cotas_ativas_nao_contempladas_inadimplentes', 0).astype(int)
     )
 
-    df_hist = df_hist_base.groupby(['sort_key', 'data_referencia'], as_index=False).agg(
+    # Agrupar por competência ordenada
+    df_hist = df_hist_base.groupby(['competencia', 'sort_key', 'data_referencia'], as_index=False).agg(
         vendas_mes=('quantidade', 'sum'),
         total_cotas_ativas=('cotas_ativas_total', 'sum'),
         total_inadimplentes=('total_inadimplentes', 'sum')
     ).sort_values('sort_key')
 
+    # % exata para exibir nos rótulos e hover
     df_hist['pct_inadimplencia'] = df_hist.apply(
         lambda row: round((row['total_inadimplentes'] / row['total_cotas_ativas'] * 100), 2)
         if row['total_cotas_ativas'] > 0 else 0,
         axis=1
     )
 
+    # Debug no console do servidor
+    print("=== df_hist (Evolução Mensal) ===")
+    if not df_hist.empty:
+        print(df_hist[['data_referencia', 'vendas_mes', 'total_cotas_ativas', 'total_inadimplentes', 'pct_inadimplencia']].to_string(index=False))
+    else:
+        print("df_hist está vazio")
+
     fig_hist = go.Figure()
+
+    x_vals = df_hist['data_referencia'].tolist()
+    vendas_vals = df_hist['vendas_mes'].tolist()
+    total_vals = df_hist['total_cotas_ativas'].tolist()
+    inad_vals = df_hist['total_inadimplentes'].tolist()
+    pct_vals = df_hist['pct_inadimplencia'].tolist()
 
     # Barra 1: Vendas no Mês
     fig_hist.add_trace(go.Bar(
-        x=df_hist['data_referencia'], 
-        y=df_hist['vendas_mes'], 
-        name='Vendas no Mês', 
+        x=x_vals,
+        y=vendas_vals,
+        name='Vendas no Mês',
         marker_color='#1A4B83',
-        text=[f"{v:,}".replace(",", ".") for v in df_hist['vendas_mes']],
+        text=[f"{int(v):,}".replace(",", ".") for v in vendas_vals],
         textposition='outside',
         hovertemplate="<b>%{x}</b><br>Vendas no Mês: <b>%{y:,.0f}</b><extra></extra>"
     ))
 
     # Barra 2: Total Cotas Ativas
     fig_hist.add_trace(go.Bar(
-        x=df_hist['data_referencia'], 
-        y=df_hist['total_cotas_ativas'], 
-        name='Total Cotas Ativas', 
+        x=x_vals,
+        y=total_vals,
+        name='Total Cotas Ativas',
         marker_color='#28A745',
-        text=[f"{v:,}".replace(",", ".") for v in df_hist['total_cotas_ativas']],
+        text=[f"{int(v):,}".replace(",", ".") for v in total_vals],
         textposition='outside',
         hovertemplate="<b>%{x}</b><br>Total Cotas Ativas: <b>%{y:,.0f}</b><extra></extra>"
     ))
 
-    # Barra 3: Inadimplência
+    # Barra 3: Inadimplência (valores absolutos) com rótulo em %
     fig_hist.add_trace(go.Bar(
-        x=df_hist['data_referencia'], 
-        y=df_hist['total_inadimplentes'], 
-        name='% Inadimplência', 
+        x=x_vals,
+        y=inad_vals,
+        name='% Inadimplência',
         marker_color='#D9534F',
-        text=[f"{pct:.2f}%" for pct in df_hist['pct_inadimplencia']],
+        text=[f"{pct:.2f}%" for pct in pct_vals],
         textposition='outside',
-        customdata=df_hist['pct_inadimplencia'],
+        customdata=pct_vals,
         hovertemplate="<b>%{x}</b><br>Cotas Inadimplentes: <b>%{y:,.0f}</b><br>Taxa de Inadimplência: <b>%{customdata:.2f}%</b><extra></extra>"
     ))
 
-    max_val = max(df_hist['total_cotas_ativas'].max(), df_hist['vendas_mes'].max()) if len(df_hist) > 0 else 100
+    # Calcular máximo para ajustar eixo y
+    if not df_hist.empty:
+        max_val = max(
+            df_hist['total_cotas_ativas'].fillna(0).max(),
+            df_hist['vendas_mes'].fillna(0).max()
+        )
+    else:
+        max_val = 100
 
     fig_hist.update_layout(
         barmode='group',
-        height=380, 
-        hovermode='closest', 
-        margin=dict(l=50, r=50, t=30, b=40),
-        paper_bgcolor='rgba(0,0,0,0)', 
+        title=dict(text="Evolução Mensal (3 Barras Proporcionais)", y=0.95, x=0.01),
+        height=450,
+        hovermode='closest',
+        margin=dict(l=60, r=60, t=80, b=50),
+        legend=dict(orientation='h', y=1.1, x=0.01),
+        paper_bgcolor='rgba(0,0,0,0)',
         plot_bgcolor='rgba(0,0,0,0)',
-        legend=dict(orientation='h', y=1.15, x=0),
         xaxis=dict(type='category', title='Competência'),
         yaxis=dict(
-            title="Quantidade de Cotas", 
-            showgrid=True, 
+            title="Quantidade de Cotas",
+            showgrid=True,
             gridcolor='#E0E6ED',
             range=[0, max_val * 1.25]
         )
