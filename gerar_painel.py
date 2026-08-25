@@ -126,75 +126,70 @@ def index():
     )
     div_pizza = fig_pizza.to_html(full_html=False, include_plotlyjs=False)
 
-    # 3. Histórico
+    # 3. Histórico (Corrigido dentro da função index)
     df_hist_base = df.copy()
 
-if seg_sel != 'TODOS':
-    df_hist_base = df_hist_base[df_hist_base['segmento'] == seg_sel]
-if admin_sel != 'TODOS':
-    df_hist_base = df_hist_base[df_hist_base['administradora'] == admin_sel]
+    if seg_sel != 'TODOS':
+        df_hist_base = df_hist_base[df_hist_base['segmento'] == seg_sel]
+    if admin_sel != 'TODOS':
+        df_hist_base = df_hist_base[df_hist_base['administradora'] == admin_sel]
 
-# Agrupamento utilizando os nomes corretos vindos da consulta
-df_hist = df_hist_base.groupby(['sort_key', 'data_referencia'], as_index=False)[
-    ['vendas_mes', 'cotas_ativas_contempladas_mes', 'cotas_excluidas_a_comercializar', 'total_cotas_ativas', 'pct_inadimplencia']
-].sum().sort_values('sort_key')
+    df_hist = df_hist_base.groupby(['sort_key', 'data_referencia'], as_index=False)[
+        ['quantidade', 'cotas_ativas_contempladas_mes', 'cotas_excluidas_a_comercializar', 'cotas_ativas_total']
+    ].sum().sort_values('sort_key')
 
-# Formatar data para exibição no eixo X (garante tipo string)
-df_hist['data_referencia'] = df_hist['data_referencia'].astype(str)
+    df_hist['data_referencia'] = df_hist['data_referencia'].astype(str)
 
-fig_hist = make_subplots(specs=[[{"secondary_y": True}]])
+    fig_hist = make_subplots(specs=[[{"secondary_y": True}]])
 
-# Vendas no Mês
-fig_hist.add_trace(go.Bar(
-    x=df_hist['data_referencia'], 
-    y=df_hist['vendas_mes'], 
-    name='Vendas no Mês', 
-    marker_color='#1A4B83',
-    orientation='v' # Garante orientação vertical
-), secondary_y=False)
+    fig_hist.add_trace(go.Bar(
+        x=df_hist['data_referencia'], 
+        y=df_hist['quantidade'], 
+        name='Vendas no Mês', 
+        marker_color='#1A4B83',
+        orientation='v'
+    ), secondary_y=False)
 
-# Contemplações
-fig_hist.add_trace(go.Bar(
-    x=df_hist['data_referencia'], 
-    y=df_hist['cotas_ativas_contempladas_mes'], 
-    name='Contemplações', 
-    marker_color='#28A745',
-    orientation='v'
-), secondary_y=False)
+    fig_hist.add_trace(go.Bar(
+        x=df_hist['data_referencia'], 
+        y=df_hist['cotas_ativas_contempladas_mes'], 
+        name='Contemplações', 
+        marker_color='#28A745',
+        orientation='v'
+    ), secondary_y=False)
 
-# Cancelamentos
-fig_hist.add_trace(go.Bar(
-    x=df_hist['data_referencia'], 
-    y=df_hist['cotas_excluidas_a_comercializar'], 
-    name='Cancelamentos', 
-    marker_color='#D9534F',
-    orientation='v'
-), secondary_y=False)
+    fig_hist.add_trace(go.Bar(
+        x=df_hist['data_referencia'], 
+        y=df_hist['cotas_excluidas_a_comercializar'], 
+        name='Cancelamentos', 
+        marker_color='#D9534F',
+        orientation='v'
+    ), secondary_y=False)
 
-# Linha - Carteira Ativa
-fig_hist.add_trace(go.Scatter(
-    x=df_hist['data_referencia'], 
-    y=df_hist['total_cotas_ativas'], 
-    name='Carteira Ativa', 
-    line=dict(color='#6C757D', width=3),
-    mode='lines+markers'
-), secondary_y=True)
+    fig_hist.add_trace(go.Scatter(
+        x=df_hist['data_referencia'], 
+        y=df_hist['cotas_ativas_total'], 
+        name='Carteira Ativa', 
+        line=dict(color='#6C757D', width=3),
+        mode='lines+markers'
+    ), secondary_y=True)
 
-fig_hist.update_layout(
-    height=350, 
-    barmode='group',
-    hovermode='x unified', 
-    margin=dict(l=50, r=50, t=20, b=40),
-    paper_bgcolor='rgba(0,0,0,0)', 
-    plot_bgcolor='rgba(0,0,0,0)',
-    legend=dict(orientation='h', y=1.15, x=0),
-    xaxis=dict(type='category', title='Competência')
-)
+    fig_hist.update_layout(
+        height=350, 
+        barmode='group',
+        hovermode='x unified', 
+        margin=dict(l=50, r=50, t=20, b=40),
+        paper_bgcolor='rgba(0,0,0,0)', 
+        plot_bgcolor='rgba(0,0,0,0)',
+        legend=dict(orientation='h', y=1.15, x=0),
+        xaxis=dict(type='category', title='Competência')
+    )
 
-fig_hist.update_yaxes(title_text="Fluxo Mensal", secondary_y=False, showgrid=True, gridcolor='#E0E6ED')
-fig_hist.update_yaxes(title_text="Estoque Ativo", secondary_y=True, showgrid=False)
+    fig_hist.update_yaxes(title_text="Fluxo Mensal", secondary_y=False, showgrid=True, gridcolor='#E0E6ED')
+    fig_hist.update_yaxes(title_text="Estoque Ativo", secondary_y=True, showgrid=False)
 
-div_hist = fig_hist.to_html(full_html=False, include_plotlyjs=False)
+    div_hist = fig_hist.to_html(full_html=False, include_plotlyjs=False)
+
     html_template = """<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -213,7 +208,6 @@ div_hist = fig_hist.to_html(full_html=False, include_plotlyjs=False)
         .filter-section { background: var(--card-bg); border-radius: 10px; padding: 1rem 1.5rem; border: 1px solid var(--border-color); margin-bottom: 1.5rem; }
         .table-data td { font-size: 0.88rem; font-weight: 600; color: #333; }
         .text-gray { color: var(--accent-gray); font-weight: 700; }
-        /* Loading */
         #loading-overlay {
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
@@ -232,9 +226,7 @@ div_hist = fig_hist.to_html(full_html=False, include_plotlyjs=False)
         }
     </style>
 </head>
-<body class="">
-
-    <!-- Screen Loading Overlay -->
+<body>
     <div id="loading-overlay">
         <div class="spinner-border text-primary mb-3" style="width: 3.5rem; height: 3.5rem;" role="status">
             <span class="visually-hidden">Carregando...</span>
@@ -245,7 +237,7 @@ div_hist = fig_hist.to_html(full_html=False, include_plotlyjs=False)
 
     <div class="container-fluid">
         <div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom">
-            <h2><span class="text-gray">Carteira por Seguimento e Administradoras (Consórcios)</span></h2>
+            <h2><span class="text-gray">Carteira por Segmento e Administradoras (Consórcios)</span></h2>
             <span class="text-muted">Dados recuperados via Python</span>
         </div>
 
@@ -279,7 +271,7 @@ div_hist = fig_hist.to_html(full_html=False, include_plotlyjs=False)
                     </select>
                 </div>
                 <div class="col-md-2 d-flex gap-2">
-                    <button type="submit" class="btn btn-primary w-100 fw-bold" style="background-color= var(--primary-blue)">Filtrar</button>
+                    <button type="submit" class="btn btn-primary w-100 fw-bold" style="background-color: var(--primary-blue)">Filtrar</button>
                     <a href="/" class="btn btn-outline-secondary fw-bold" onclick="showLoading()">Limpar</a>
                 </div>
             </div>
@@ -331,17 +323,14 @@ div_hist = fig_hist.to_html(full_html=False, include_plotlyjs=False)
     </div>
 
     <script>
-        // Oculta a tela de carregamento quando tudo estiver renderizado
         window.addEventListener('load', function () {
             document.getElementById('loading-overlay').classList.add('hidden');
         });
 
-        // Exibe o loading manualmente
         function showLoading() {
             document.getElementById('loading-overlay').classList.remove('hidden');
         }
 
-        // Exibe o loading ao disparar a busca do formulário
         document.getElementById('filter-form').addEventListener('submit', function () {
             showLoading();
         });
