@@ -218,7 +218,6 @@ def index():
 
     fig_hist.update_layout(
         barmode='group',
-        title=dict(text="Evolução Mensal (3 Barras Proporcionais)", y=0.95, x=0.01),
         height=450,
         hovermode='closest',
         margin=dict(l=60, r=60, t=80, b=50),
