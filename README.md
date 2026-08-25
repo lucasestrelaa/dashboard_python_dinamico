@@ -2,6 +2,8 @@
   <h1>📊 Dashboard de Análise de Dados - Consórcios BACEN</h1>
   <p><i>Painel interativo para monitoramento de vendas, carteira ativa e inadimplência usando Python, Flask e Plotly.</i></p>
 
+  Com base em dados disponíveis no [Dados do Sistema de Consórcios — ABAC](https://abac.org.br/downloads/dados-do-sistema-de-consorcios/?utm_source=chatgpt.com)
+
   <!-- Badges indicando as tecnologias -->
   <img src="https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="Python" />
   <img src="https://img.shields.io/badge/Flask-000000?style=for-the-badge&logo=flask&logoColor=white" alt="Flask" />
