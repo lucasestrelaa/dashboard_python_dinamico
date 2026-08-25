@@ -166,7 +166,7 @@ def index():
         .chart-card, .data-panel { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 10px; padding: 1.2rem; min-height: 420px; }
         .filter-section { background: var(--card-bg); border-radius: 10px; padding: 1rem 1.5rem; border: 1px solid var(--border-color); margin-bottom: 1.5rem; }
         .table-data td { font-size: 0.88rem; font-weight: 600; color: #333; }
-        .text-gray {{ color: var(--accent-gray); font-weight: 700; }}
+        .text-gray { color: var(--accent-gray); font-weight: 700; }
         /* Loading */
         #loading-overlay {
             position: fixed;
