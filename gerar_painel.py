@@ -129,66 +129,53 @@ def index():
     # 3. Histórico (Corrigido dentro da função index)
     df_hist_base = df.copy()
 
-    if seg_sel != 'TODOS':
-        df_hist_base = df_hist_base[df_hist_base['segmento'] == seg_sel]
-    if admin_sel != 'TODOS':
-        df_hist_base = df_hist_base[df_hist_base['administradora'] == admin_sel]
+if seg_sel != 'TODOS':
+    df_hist_base = df_hist_base[df_hist_base['segmento'] == seg_sel]
+if admin_sel != 'TODOS':
+    df_hist_base = df_hist_base[df_hist_base['administradora'] == admin_sel]
 
-    df_hist = df_hist_base.groupby(['sort_key', 'data_referencia'], as_index=False)[
-        ['quantidade', 'cotas_ativas_contempladas_mes', 'cotas_excluidas_a_comercializar', 'cotas_ativas_total']
-    ].sum().sort_values('sort_key')
+# Usa as colunas reais vindas da SQL: 'vendas_mes' e 'total_cotas_ativas'
+df_hist = df_hist_base.groupby(['sort_key', 'data_referencia'], as_index=False)[
+    ['vendas_mes', 'total_cotas_ativas']
+].sum().sort_values('sort_key')
 
-    df_hist['data_referencia'] = df_hist['data_referencia'].astype(str)
+df_hist['data_referencia'] = df_hist['data_referencia'].astype(str)
 
-    fig_hist = make_subplots(specs=[[{"secondary_y": True}]])
+fig_hist = make_subplots(specs=[[{"secondary_y": True}]])
 
-    fig_hist.add_trace(go.Bar(
-        x=df_hist['data_referencia'], 
-        y=df_hist['quantidade'], 
-        name='Vendas no Mês', 
-        marker_color='#1A4B83',
-        orientation='v'
-    ), secondary_y=False)
+# 1. Vendas no Mês (Barras - Eixo Y da Esquerda)
+fig_hist.add_trace(go.Bar(
+    x=df_hist['data_referencia'], 
+    y=df_hist['vendas_mes'], 
+    name='Vendas no Mês', 
+    marker_color='#1A4B83',
+    orientation='v'
+), secondary_y=False)
 
-    fig_hist.add_trace(go.Bar(
-        x=df_hist['data_referencia'], 
-        y=df_hist['cotas_ativas_contempladas_mes'], 
-        name='Contemplações', 
-        marker_color='#28A745',
-        orientation='v'
-    ), secondary_y=False)
+# 2. Total de Cotas Ativas (Linha - Eixo Y da Direita)
+fig_hist.add_trace(go.Scatter(
+    x=df_hist['data_referencia'], 
+    y=df_hist['total_cotas_ativas'], 
+    name='Total Cotas Ativas', 
+    line=dict(color='#28A745', width=3),
+    mode='lines+markers'
+), secondary_y=True)
 
-    fig_hist.add_trace(go.Bar(
-        x=df_hist['data_referencia'], 
-        y=df_hist['cotas_excluidas_a_comercializar'], 
-        name='Cancelamentos', 
-        marker_color='#D9534F',
-        orientation='v'
-    ), secondary_y=False)
+fig_hist.update_layout(
+    height=350, 
+    barmode='group',
+    hovermode='x unified', 
+    margin=dict(l=50, r=50, t=20, b=40),
+    paper_bgcolor='rgba(0,0,0,0)', 
+    plot_bgcolor='rgba(0,0,0,0)',
+    legend=dict(orientation='h', y=1.15, x=0),
+    xaxis=dict(type='category', title='Competência')
+)
 
-    fig_hist.add_trace(go.Scatter(
-        x=df_hist['data_referencia'], 
-        y=df_hist['cotas_ativas_total'], 
-        name='Carteira Ativa', 
-        line=dict(color='#6C757D', width=3),
-        mode='lines+markers'
-    ), secondary_y=True)
+fig_hist.update_yaxes(title_text="Vendas no Mês", secondary_y=False, showgrid=True, gridcolor='#E0E6ED')
+fig_hist.update_yaxes(title_text="Total Cotas Ativas", secondary_y=True, showgrid=False)
 
-    fig_hist.update_layout(
-        height=350, 
-        barmode='group',
-        hovermode='x unified', 
-        margin=dict(l=50, r=50, t=20, b=40),
-        paper_bgcolor='rgba(0,0,0,0)', 
-        plot_bgcolor='rgba(0,0,0,0)',
-        legend=dict(orientation='h', y=1.15, x=0),
-        xaxis=dict(type='category', title='Competência')
-    )
-
-    fig_hist.update_yaxes(title_text="Fluxo Mensal", secondary_y=False, showgrid=True, gridcolor='#E0E6ED')
-    fig_hist.update_yaxes(title_text="Estoque Ativo", secondary_y=True, showgrid=False)
-
-    div_hist = fig_hist.to_html(full_html=False, include_plotlyjs=False)
+div_hist = fig_hist.to_html(full_html=False, include_plotlyjs=False)
 
     html_template = """<!DOCTYPE html>
 <html lang="pt-BR">
