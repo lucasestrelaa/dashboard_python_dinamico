@@ -166,8 +166,8 @@ def index():
         .chart-card, .data-panel { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 10px; padding: 1.2rem; min-height: 420px; }
         .filter-section { background: var(--card-bg); border-radius: 10px; padding: 1rem 1.5rem; border: 1px solid var(--border-color); margin-bottom: 1.5rem; }
         .table-data td { font-size: 0.88rem; font-weight: 600; color: #333; }
-
-        /* Estilização da tela de carregamento (Loading) */
+        .text-gray {{ color: var(--accent-gray); font-weight: 700; }}
+        /* Loading */
         #loading-overlay {
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
@@ -233,30 +233,30 @@ def index():
                     </select>
                 </div>
                 <div class="col-md-2 d-flex gap-2">
-                    <button type="submit" class="btn btn-primary w-100 fw-bold">Filtrar</button>
+                    <button type="submit" class="btn btn-primary w-100 fw-bold" style="background-color= var(--primary-blue)">Filtrar</button>
                     <a href="/" class="btn btn-outline-secondary fw-bold" onclick="showLoading()">Limpar</a>
                 </div>
             </div>
         </form>
 
         <div class="row mb-4 g-3">
-            <div class="col-md-2"><div class="card kpi-card kpi-card-primary p-3"><div class="kpi-title">Vendas</div><div class="kpi-value">{{ fmt(t_vendas) }}</div></div></div>
             <div class="col-md-2"><div class="card kpi-card border p-3"><div class="kpi-title text-muted">Média Mensal</div><div class="kpi-value text-primary">{{ fmt(media_vendas) }}</div></div></div>
-            <div class="col-md-3"><div class="card kpi-card border p-3"><div class="kpi-title text-muted">Cotas Ativas</div><div class="kpi-value text-dark">{{ fmt(t_total_ativas) }}</div></div></div>
+            <div class="col-md-4"><div class="card kpi-card border p-3"><div class="kpi-title text-muted">Cotas Ativas</div><div class="kpi-value text-dark">{{ fmt(t_total_ativas) }}</div></div></div>
             <div class="col-md-2"><div class="card kpi-card border p-3"><div class="kpi-title text-muted">Contemplações</div><div class="kpi-value text-success">{{ fmt(t_cont_mes) }}</div></div></div>
-            <div class="col-md-3"><div class="card kpi-card border p-3"><div class="kpi-title text-muted">Taxa Inadimplência</div><div class="kpi-value text-danger">{{ taxa_inad }}%</div></div></div>
+            <div class="col-md-2"><div class="card kpi-card border p-3"><div class="kpi-title text-muted">Taxa Inadimplência</div><div class="kpi-value text-danger">{{ taxa_inad }}%</div></div></div>
+            <div class="col-md-2"><div class="card kpi-card kpi-card-primary p-3"><div class="kpi-title">Vendas</div><div class="kpi-value">{{ fmt(t_vendas) }}</div></div></div>
         </div>
 
         <div class="row mb-4">
             <div class="col-xl-8 col-lg-7">
                 <div class="row g-3">
-                    <div class="col-md-6"><div class="chart-card"><h6 class="fw-bold" style="color: var(--primary-blue);">1. Funil de Conversão</h6>{{ div_funil|safe }}</div></div>
-                    <div class="col-md-6"><div class="chart-card"><h6 class="fw-bold" style="color: var(--primary-blue);">2. Composição da Carteira</h6>{{ div_pizza|safe }}</div></div>
+                    <div class="col-md-6"><div class="chart-card"><h5 class="mb-3" style="color: var(--primary-blue);">Funil de Conversão</h5>{{ div_funil|safe }}</div></div>
+                    <div class="col-md-6"><div class="chart-card"><h5 class="fw-bold" style="color: var(--primary-blue);">Composição da Carteira</h5>{{ div_pizza|safe }}</div></div>
                 </div>
             </div>
             <div class="col-xl-4 col-lg-5">
                 <div class="data-panel shadow-sm">
-                    <h6 class="fw-bold mb-3 border-bottom pb-2" style="color: var(--primary-blue);">📊 Métricas Consolidadas</h6>
+                    <h6 class="fw-bold mb-3 border-bottom pb-2" style="color: var(--primary-blue);">Métricas Consolidadas</h6>
                     <table class="table table-sm table-hover table-borderless table-data align-middle mb-0">
                         <tbody>
                             <tr><td>Vendas Comercializadas</td><td class="text-end text-primary">{{ fmt(t_vendas) }}</td></tr>
@@ -277,7 +277,7 @@ def index():
         <div class="row">
             <div class="col-md-12">
                 <div class="chart-card">
-                    <h6 class="fw-bold" style="color: var(--primary-blue);">3. Evolução Histórica Mês a Mês</h6>
+                    <h5 class="fw-bold" style="color: var(--primary-blue);">Evolução Histórica Mês a Mês</h5>
                     {{ div_hist|safe }}
                 </div>
             </div>
